@@ -3,27 +3,75 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
+  Image,
   View
 } from 'react-native';
+import { graphql } from 'react-apollo'
+import gql from 'graphql-tag'
 
-export default class helloGraphQL extends Component {
+const GithubQuery = gql`
+  {
+  graphQLHub
+  github {
+    user(username: "knewter") {
+      login
+      id
+      company
+      avatar_url
+    }
+  }
+}
+`
+
+class helloGraphQL extends Component {
+  static propTypes = {
+    data: React.PropTypes.shape({
+      loading: React.PropTypes.bool,
+      error: React.PropTypes.object,
+      github: React.PropTypes.shape({
+        user: React.PropTypes.shape({
+          login: React.PropTypes.string,
+          id: React.PropTypes.number,
+          company: React.PropTypes.string,
+        })
+      })
+    }),
+  }
+
   render() {
+    if (this.props.data.error) {
+      console.log(this.props.data.error)
+      return (<Text style={{marginTop: 64}}>An unexpected error occurred</Text>)
+    }
+
+    if (this.props.data.loading) {
+      return (<Text style={{marginTop: 64}}>Loading</Text>)
+    }
+
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
+        <Text style={styles.text}>
+          GraphQL in React Native
         </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.android.js
+
+        <Text style={styles.text}>
+          User: {this.props.data.github.user.login}!
         </Text>
-        <Text style={styles.instructions}>
-          Double tap R on your keyboard to reload,{'\n'}
-          Shake or press menu button for dev menu
+
+        <Text style={styles.text}>
+          Company: {this.props.data.github.user.company}!
         </Text>
+
+        <Image source={{uri: this.props.data.github.user.avatar_url}}
+               style={{width: 100, height: 100}} />
       </View>
     );
   }
 }
+
+const GraphqlWithData = graphql(GithubQuery)(helloGraphQL)
+
+export default GraphqlWithData
 
 const styles = StyleSheet.create({
   container: {
@@ -32,15 +80,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },
-  welcome: {
+  text: {
     fontSize: 20,
     textAlign: 'center',
     margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
   },
 });
 
