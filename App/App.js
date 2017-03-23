@@ -3,28 +3,69 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
+  TextInput,
   Image,
   View
 } from 'react-native';
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 
-const GithubQuery = gql`
-  {
-  graphQLHub
-  github {
-    user(username: "knewter") {
-      login
-      id
-      company
-      avatar_url
+class helloGraphQL extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      username: 'knewter'
     }
   }
-}
-`
 
-class helloGraphQL extends Component {
-  static propTypes = {
+  render() {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.text}>
+          GraphQL in React Native
+        </Text>
+
+        <TextInput
+                style={{height: 40, borderColor: 'gray', borderWidth: 1}}
+                onChangeText={(username) => this.setState({username})}
+                value={this.state.username}
+              />
+
+        <GithubWithApollo username={this.state.username} data={this.props.data} />
+      </View>
+    );
+  }
+}
+
+const GithubInformation = (props) => {
+ if (props.data.error) {
+    console.log(props.data.error)
+    return (<Text style={{marginTop: 64}}>An unexpected error occurred</Text>)
+  }
+
+  if (props.data.loading) {
+    return (<Text style={{marginTop: 64}}>Loading</Text>)
+  }
+
+  return (
+      <View style={styles.container}>
+
+        <Text style={styles.text}>
+          User: {props.data.github.user.login}!
+        </Text>
+
+        <Text style={styles.text}>
+          Company: {props.data.github.user.company}!
+        </Text>
+
+        <Image source={{uri: props.data.github.user.avatar_url}}
+          style={{width: 100, height: 100}} />
+
+      </View>
+    )
+}
+
+GithubInformation.propTypes = {
     data: React.PropTypes.shape({
       loading: React.PropTypes.bool,
       error: React.PropTypes.object,
@@ -38,40 +79,31 @@ class helloGraphQL extends Component {
     }),
   }
 
-  render() {
-    if (this.props.data.error) {
-      console.log(this.props.data.error)
-      return (<Text style={{marginTop: 64}}>An unexpected error occurred</Text>)
-    }
-
-    if (this.props.data.loading) {
-      return (<Text style={{marginTop: 64}}>Loading</Text>)
-    }
-
-    return (
-      <View style={styles.container}>
-        <Text style={styles.text}>
-          GraphQL in React Native
-        </Text>
-
-        <Text style={styles.text}>
-          User: {this.props.data.github.user.login}!
-        </Text>
-
-        <Text style={styles.text}>
-          Company: {this.props.data.github.user.company}!
-        </Text>
-
-        <Image source={{uri: this.props.data.github.user.avatar_url}}
-               style={{width: 100, height: 100}} />
-      </View>
-    );
+const GithubQuery = gql`
+  query ($username: String!){
+     graphQLHub
+      github {
+        user(username: $username) {
+          login
+          id
+          company
+          avatar_url
+        }
+      }
   }
-}
+`
 
-const GraphqlWithData = graphql(GithubQuery)(helloGraphQL)
+const GithubWithApollo = graphql(GithubQuery, {
+  options: (props) => {
+    return {
+      variables: {
+        username: props.username
+      }
+    }
+  }
+})(GithubInformation)
 
-export default GraphqlWithData
+export default helloGraphQL
 
 const styles = StyleSheet.create({
   container: {
